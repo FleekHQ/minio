@@ -22,6 +22,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"reflect"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -151,6 +152,9 @@ func AuditLog(w http.ResponseWriter, r *http.Request, api string, reqClaims map[
 		statusCode = st.StatusCode
 		timeToResponse = time.Now().UTC().Sub(st.StartTime)
 		timeToFirstByte = st.TimeToFirstByte
+	} else {
+		// NOTE: have to use reflection since the underlying struct is from a private package cant be casted here
+		statusCode = getStatusCodeWithReflect(w)
 	}
 
 	vars := mux.Vars(r)
@@ -174,3 +178,18 @@ func AuditLog(w http.ResponseWriter, r *http.Request, api string, reqClaims map[
 		_ = t.Send(entry, string(All))
 	}
 }
+
+func getStatusCodeWithReflect(w http.ResponseWriter) int {
+	e := reflect.ValueOf(w).Elem()
+
+	for i := 0; i < e.NumField(); i++ {
+		varName := e.Type().Field(i).Name
+		if varName == "respStatusCode" {
+			statusCode := e.Field(i).Int()
+			return int(statusCode)
+		}
+	}
+
+	return 0
+}
+

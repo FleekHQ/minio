@@ -22,3 +22,6 @@ prime/
 stage/
 .sia_temp/
 config.json
+
+s3xstore/
+.keep
