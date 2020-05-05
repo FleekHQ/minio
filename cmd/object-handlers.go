@@ -69,6 +69,8 @@ const (
 	encryptBufferThreshold = 1 << 20
 	// add an input buffer of this size.
 	encryptBufferSize = 1 << 20
+
+	fleekIpfsContentHash = "X-FLEEK-IPFS-HASH"
 )
 
 // setHeadGetRespHeaders - set any requested parameters as response headers.
@@ -1440,6 +1442,11 @@ func (api objectAPIHandlers) PutObjectHandler(w http.ResponseWriter, r *http.Req
 	if err != nil {
 		writeErrorResponse(ctx, w, toAPIError(ctx, err), r.URL, guessIsBrowserReq(r))
 		return
+	}
+
+	// Add Fleek Content Header
+	if objInfo.UserDefined != nil && objInfo.UserDefined[fleekIpfsContentHash] != "" {
+		w.Header()[fleekIpfsContentHash] = []string{objInfo.UserDefined[fleekIpfsContentHash]}
 	}
 
 	etag := objInfo.ETag
