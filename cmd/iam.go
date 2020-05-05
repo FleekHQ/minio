@@ -22,6 +22,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/minio/minio-go/v6/pkg/set"
 	"github.com/minio/minio/cmd/config"
@@ -578,7 +579,7 @@ func (sys *IAMSys) DeleteUser(accessKey string) error {
 }
 
 // SetTempUser - set temporary user credentials, these credentials have an expiry.
-func (sys *IAMSys) SetTempUser(accessKey string, cred auth.Credentials, policyName string) error {
+func (sys *IAMSys) SetTempUser(accessKey string, cred auth.Credentials, policyNames string) error {
 	objectAPI := newObjectLayerWithoutSafeModeFn()
 	if objectAPI == nil || sys == nil || sys.store == nil {
 		return errServerNotInitialized
@@ -587,26 +588,32 @@ func (sys *IAMSys) SetTempUser(accessKey string, cred auth.Credentials, policyNa
 	sys.store.lock()
 	defer sys.store.unlock()
 
-	// If OPA is not set we honor any policy claims for this
-	// temporary user which match with pre-configured canned
-	// policies for this server.
-	if globalPolicyOPA == nil && policyName != "" {
-		p, ok := sys.iamPolicyDocsMap[policyName]
-		if !ok {
-			return errInvalidArgument
+	policyArray := strings.Split(policyNames, ",")
+	for _, policyName := range policyArray {
+		// If OPA is not set we honor any policy claims for this
+		// temporary user which match with pre-configured canned
+		// policies for this server.
+		if globalPolicyOPA == nil && policyName != "" {
+			p, ok := sys.iamPolicyDocsMap[policyName]
+			if !ok {
+				return errInvalidArgument
+			}
+			if p.IsEmpty() {
+				delete(sys.iamUserPolicyMap, accessKey)
+				return nil
+			}
 		}
-		if p.IsEmpty() {
-			delete(sys.iamUserPolicyMap, accessKey)
-			return nil
-		}
-
-		mp := newMappedPolicy(policyName)
-		if err := sys.store.saveMappedPolicy(accessKey, stsUser, false, mp); err != nil {
-			return err
-		}
-
-		sys.iamUserPolicyMap[accessKey] = mp
 	}
+
+	mp := newMappedPolicy(policyNames)
+	if err := sys.store.saveMappedPolicy(accessKey, stsUser, false, mp); err != nil {
+		return err
+	}
+
+	// If we are receiving more than one policy (joined by commas)
+	// we store the joined by commas string in iamUserPolicyMap.
+	// Later, in isAllowedSTS we split by commas back.
+	sys.iamUserPolicyMap[accessKey] = mp
 
 	u := newUserIdentity(cred)
 	if err := sys.store.saveUserIdentity(accessKey, stsUser, u); err != nil {
@@ -1665,8 +1672,9 @@ func (sys *IAMSys) IsAllowedSTS(args iampolicy.Args) bool {
 		return false
 	}
 	name := mp.Policy
+	joinedPolicyName := strings.Join(pnameSlice, ",")
 
-	if pnameSlice[0] != name {
+	if joinedPolicyName != name {
 		// When claims has a policy, it should match the
 		// policy of args.AccountName which server remembers.
 		// if not reject such requests.
@@ -1696,15 +1704,27 @@ func (sys *IAMSys) IsAllowedSTS(args iampolicy.Args) bool {
 			return false
 		}
 
-		// Sub policy is set and valid.
-		p, ok := sys.iamPolicyDocsMap[pnameSlice[0]]
-		return ok && p.IsAllowed(args) && subPolicy.IsAllowed(args)
+		// Return true if the intersection of subpolicy with one of the parent policies is allowed
+		for _, currPolicy := range pnameSlice {
+			p, ok := sys.iamPolicyDocsMap[currPolicy]
+			if ok && p.IsAllowed(args) && subPolicy.IsAllowed(args) {
+				return true
+			}
+		}
+
+		return false
 	}
 
 	// Sub policy not set, this is most common since subPolicy
 	// is optional, use the top level policy only.
-	p, ok := sys.iamPolicyDocsMap[pnameSlice[0]]
-	return ok && p.IsAllowed(args)
+	for _, currPolicy := range pnameSlice {
+		p, ok := sys.iamPolicyDocsMap[currPolicy]
+		if ok && p.IsAllowed(args) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // IsAllowed - checks given policy args is allowed to continue the Rest API.
