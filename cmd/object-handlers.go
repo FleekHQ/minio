@@ -2552,6 +2552,11 @@ func (api objectAPIHandlers) CompleteMultipartUploadHandler(w http.ResponseWrite
 	// Set etag.
 	w.Header()[xhttp.ETag] = []string{"\"" + objInfo.ETag + "\""}
 
+	// Add Fleek Content Header
+	if objInfo.UserDefined != nil && objInfo.UserDefined[fleekIpfsContentHash] != "" {
+		w.Header()[fleekIpfsContentHash] = []string{objInfo.UserDefined[fleekIpfsContentHash]}
+	}
+
 	// Write success response.
 	writeSuccessResponseXML(w, encodedSuccessResponse)
 
