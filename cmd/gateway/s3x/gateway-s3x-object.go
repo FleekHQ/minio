@@ -2,6 +2,7 @@ package s3x
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -211,8 +212,29 @@ func (x *xObjects) putObject(ctx context.Context, r io.Reader, bucket string, ob
 		fleekIpfsContentHash: hash,
 	}
 
+	pingHash(hash)
+
 	log.Printf("bucket-name: %s, object-name: %s, file-hash: %s", bucket, object, hash)
 	return getMinioObjectInfo(&obinfo), nil
+}
+
+func pingHash(hash string) {
+	// PING hashes to Temporal and FLEEK gateway
+	go func () {
+		_, err := http.Get("https://temporal.gateway.cloud/ipfs/" + hash)
+		if err != nil {
+			log.Println(fmt.Printf("error when pinging temporal gateway on hash %s. Err: %s", hash, err.Error()))
+		}
+		log.Println("pinged to temporal gateway on hash " + hash)
+	} ()
+
+	go func () {
+		_, err := http.Get("https://ipfs.fleek.co/ipfs/" + hash)
+		if err != nil {
+			log.Println(fmt.Printf("error when pinging fleek gateway on hash %s. Err: %s", hash, err.Error()))
+		}
+		log.Println("pinged to Fleek gateway on hash " + hash)
+	} ()
 }
 
 // CopyObject copies an object from source bucket to a destination bucket.
