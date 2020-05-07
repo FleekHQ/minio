@@ -193,5 +193,12 @@ func (x *xObjects) CompleteMultipartUpload(
 	if err != nil {
 		return oi, x.toMinioErr(err, bucket, object, uploadID)
 	}
+	// Add Fleek content hash header
+	loi.UserDefined = map[string]string{
+		fleekIpfsContentHash: dataHash,
+	}
+	// ping gateways for hashes
+	pingHash(dataHash)
+
 	return getMinioObjectInfo(loi), x.AbortMultipartUpload(ctx, bucket, object, uploadID)
 }
