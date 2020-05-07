@@ -25,6 +25,8 @@ func (x *xObjects) MakeBucketWithLocation(
 	if err != nil {
 		return x.toMinioErr(err, name, "", "")
 	}
+
+	pingHash(hash)
 	log.Printf("bucket-name: %s\tbucket-hash: %s", name, hash)
 	return nil
 }

@@ -211,6 +211,8 @@ func (x *xObjects) putObject(ctx context.Context, r io.Reader, bucket string, ob
 		fleekIpfsContentHash: hash,
 	}
 
+	pingHash(hash)
+
 	log.Printf("bucket-name: %s, object-name: %s, file-hash: %s", bucket, object, hash)
 	return getMinioObjectInfo(&obinfo), nil
 }
