@@ -160,10 +160,9 @@ func (ls *ledgerStore) PutObject(ctx context.Context, bucket, object string, obj
 	}
 
 	// sync lambda call
-	handlerErr := callPutObjectHandler(ctx, bucket, obj.DataHash, object)
-	if handlerErr != nil {
-		// TODO: remove object from ledger
-		log.Println("error while calling lambda in PutBucket " + err.Error())
+	if err := callPutObjectHandler(ctx, bucket, obj.DataHash, object); err != nil {
+		// TODO: remove bucket just created from ledger
+		log.Println("error while calling lambda in PutObject ")
 		return err
 	}
 

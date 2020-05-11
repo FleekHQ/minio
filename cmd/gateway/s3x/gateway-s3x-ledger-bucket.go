@@ -124,10 +124,9 @@ func (ls *ledgerStore) CreateBucket(ctx context.Context, bucket string, b *Bucke
 	}
 
 	// sync lambda call
-	handlerErr := callPutBucketHandler(ctx, bucket, lb.IpfsHash)
-	if handlerErr != nil {
+	if err := callPutBucketHandler(ctx, bucket, lb.IpfsHash); err != nil {
 		// TODO: remove bucket just created from ledger
-		log.Println("error while calling lambda in PutBucket " + err.Error())
+		log.Println("error while calling lambda in PutBucket ")
 		return "", err
 	}
 

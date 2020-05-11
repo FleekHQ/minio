@@ -61,7 +61,7 @@ func callHandlerOperation(ctx context.Context, bucket string, hash string, opera
 	responseHeader := make(map[string]string)
 	authHeader, err := extractAuthHeader(ctx)
 	if err != nil {
-		return err
+		return ErrLambdaHandler
 	}
 
 	requestHeader["Authorization"] = authHeader
@@ -83,7 +83,7 @@ func callHandlerOperation(ctx context.Context, bucket string, hash string, opera
 	j, err := json.Marshal(handlerInput)
 	if err != nil {
 		log.Println("error marshaling json: ", err)
-		return err
+		return ErrLambdaHandler
 	}
 
 	log.Println("calling lambda with: ", string(j))
@@ -105,23 +105,24 @@ func callHandlerOperation(ctx context.Context, bucket string, hash string, opera
 	if err != nil {
 		log.Println("got error: ", err)
 		log.Println(fmt.Sprintf("Error calling create bucket handler: %s", err))
-		return fmt.Errorf("error calling create bucket handler. detail %s", err.Error())
+		return ErrLambdaHandler
 	}
 
 	log.Println(fmt.Sprintf("result: %v", result))
 
 	var resp LambdaResponse
 
-	err = json.Unmarshal(result.Payload, &resp)
+	// TODO: add statusCode to lambda response
+/*	err = json.Unmarshal(result.Payload, &resp)
 	if err != nil {
-		fmt.Println("Error unmarshalling create bucket handler response")
-		return fmt.Errorf("Error unmarshalling create bucket handler response")
+		log.Println("Error unmarshalling create bucket handler response")
+		return ErrLambdaHandler
 	}
-
+*/
 	// If the status code is NOT 200, the call failed
-	if resp.StatusCode != 200 {
+	if *result.StatusCode != 200 {
 		log.Println("Error calling create bucket handler, StatusCode: " + strconv.Itoa(resp.StatusCode))
-		return fmt.Errorf("Error calling create bucket handler, StatusCode: " + strconv.Itoa(resp.StatusCode))
+		return ErrLambdaHandler
 	}
 
 	return nil
@@ -133,11 +134,11 @@ func extractAuthHeader(ctx context.Context) (string, error) {
 	headerErrMsg := "error extracting auth header from context"
 	if auth, ok = ctx.Value(authHeader).(string); !ok {
 		log.Println(headerErrMsg)
-		return "", fmt.Errorf(headerErrMsg)
+		return "", ErrLambdaHandler
 	}
 	if auth == "" {
 		log.Println(headerErrMsg)
-		return "", fmt.Errorf(headerErrMsg)
+		return "", ErrLambdaHandler
 	}
 	return auth, nil
 }
