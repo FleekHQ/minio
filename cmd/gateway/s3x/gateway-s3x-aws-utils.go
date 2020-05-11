@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/lambda"
+	"io"
 	"log"
 	"os"
 	"strconv"
@@ -45,6 +46,7 @@ type LambdaResponseHeaders struct {
 type LambdaResponse struct {
 	StatusCode int                   `json:"statusCode"`
 	Headers    LambdaResponseHeaders `json:"headers"`
+	Body       io.ReadCloser
 }
 
 func callPutBucketHandler(ctx context.Context, bucket string, hash string) error {
@@ -104,15 +106,18 @@ func callHandlerOperation(ctx context.Context, bucket string, hash string, opera
 		return fmt.Errorf("error calling create bucket handler. detail %s", err.Error())
 	}
 
-	log.Println(fmt.Sprintf("result: %v", result))
+	log.Println(fmt.Sprintf("result: %+v", result))
 
 	var resp LambdaResponse
 
-	err = json.Unmarshal(result.Payload, &resp)
-	if err != nil {
+	if err := json.Unmarshal(result.Payload, &resp); err != nil {
 		fmt.Println("Error unmarshalling create bucket handler response")
-		return fmt.Errorf("Error unmarshalling create bucket handler response")
+		return fmt.Errorf("error unmarshalling create bucket handler response")
 	}
+
+	log.Println(fmt.Sprintf("lambda response: %+v", resp))
+
+	defer resp.Body.Close()
 
 	// If the status code is NOT 200, the call failed
 	if resp.StatusCode != 200 {
