@@ -3,6 +3,7 @@ package s3x
 import (
 	"context"
 	"sync"
+	"log"
 
 	pb "github.com/RTradeLtd/TxPB/v3/go"
 	"github.com/ipfs/go-datastore"
@@ -153,7 +154,24 @@ func (ls *ledgerStore) removeObjects(ctx context.Context, bucket string, objects
 //PutObject saves an object by hash into the given bucket
 func (ls *ledgerStore) PutObject(ctx context.Context, bucket, object string, obj *Object) error {
 	defer ls.locker.write(bucket)()
-	return ls.putObject(ctx, bucket, object, obj)
+	err := ls.putObject(ctx, bucket, object, obj)
+	if  err != nil {
+		// TODO: call lambda
+		log.Println("TODO: call lambda")
+
+		// handlerInput := HandlerInput{
+		// 	entry: struct {
+		// 		api: struct {
+		// 			bucket:
+		// 			name:
+		// 			object:
+		// 		}
+		// 	}
+		// }
+		// callHandler()
+	}
+
+	return err
 }
 
 //putObject saves an object by hash into the given bucket

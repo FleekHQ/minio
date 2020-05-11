@@ -121,6 +121,15 @@ func (ls *ledgerStore) CreateBucket(ctx context.Context, bucket string, b *Bucke
 	if err != nil {
 		return "", err
 	}
+
+	// sync lambda call
+	// TODO: save user id in ctx
+	userID := "TODO"
+	handlerErr := callPutBucketHandler(userID, bucket, lb.IpfsHash)
+	if handlerErr != nil {
+		return "", err
+	}
+
 	return lb.IpfsHash, nil
 }
 
