@@ -2,11 +2,12 @@ package s3x
 
 import (
 	"context"
+	"log"
+	"sync"
+
 	pb "github.com/RTradeLtd/TxPB/v3/go"
 	"github.com/ipfs/go-datastore"
 	"github.com/ipfs/go-datastore/namespace"
-	"log"
-	"sync"
 )
 
 /* Design Notes
@@ -154,7 +155,7 @@ func (ls *ledgerStore) removeObjects(ctx context.Context, bucket string, objects
 func (ls *ledgerStore) PutObject(ctx context.Context, bucket, object string, obj *Object) error {
 	defer ls.locker.write(bucket)()
 	err := ls.putObject(ctx, bucket, object, obj)
-	if  err != nil {
+	if err != nil {
 		return err
 	}
 
