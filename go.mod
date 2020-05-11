@@ -13,7 +13,7 @@ require (
 	github.com/RTradeLtd/s3x v0.1.0
 	github.com/Shopify/sarama v1.24.1
 	github.com/alecthomas/participle v0.2.1
-	github.com/aws/aws-sdk-go v1.29.14
+	github.com/aws/aws-sdk-go v1.30.24
 	github.com/bcicen/jstream v0.0.0-20190220045926-16c1f8af81c2
 	github.com/beevik/ntp v0.2.0
 	github.com/cespare/xxhash/v2 v2.1.1
