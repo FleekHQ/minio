@@ -1,16 +1,19 @@
 package s3x
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/lambda"
-
-	"fmt"
-	// logHttp "github.com/minio/minio/logger/target/http"
-	"encoding/json"
 	"log"
 	"os"
 	"strconv"
+)
+
+const (
+	authHeader = "Authorization"
 )
 
 // API is a property on handlerinput.entry
@@ -44,12 +47,26 @@ type LambdaResponse struct {
 	Headers    LambdaResponseHeaders `json:"headers"`
 }
 
-func callPutBucketHandler(userID string, bucket string, hash string) error {
+func callPutBucketHandler(ctx context.Context, bucket string, hash string) error {
+	return callHandlerOperation(ctx, bucket, hash, "PutBucket", "")
+}
+
+func callPutObjectHandler(ctx context.Context, bucket string, hash string, object string) error {
+	return callHandlerOperation(ctx, bucket, hash, "PutObject", object)
+}
+
+func callHandlerOperation(ctx context.Context, bucket string, hash string, operation string, object string) error {
 	requestHeader := make(map[string]string)
-	requestHeader["Authorization"] = userID
+	authHeader, err := extractAuthHeader(ctx)
+	if err != nil {
+		return err
+	}
+
+	requestHeader["Authorization"] = authHeader
 	api := API{
 		Bucket: bucket,
-		Name:   "PutBucket",
+		Name:   operation,
+		Object: object,
 	}
 	entry := Entry{
 		API:           api,
@@ -61,7 +78,8 @@ func callPutBucketHandler(userID string, bucket string, hash string) error {
 	}
 	j, err := json.Marshal(handlerInput)
 	if err != nil {
-		fmt.Println("error marshaling json: ", err)
+		log.Println("error marshaling json: ", err)
+		return err
 	}
 
 	log.Println("calling lambda with: ", string(j))
@@ -80,11 +98,10 @@ func callPutBucketHandler(userID string, bucket string, hash string) error {
 	result, err := client.Invoke(&lambda.InvokeInput{
 		FunctionName: aws.String(handlerFunction),
 		Payload:      j})
-	log.Println("returned from invoke")
 	if err != nil {
 		log.Println("got error: ", err)
-		fmt.Sprintf("Error calling create bucket handler: %s", err)
-		return fmt.Errorf("Error calling create bucket handler")
+		log.Println(fmt.Sprintf("Error calling create bucket handler: %s", err))
+		return fmt.Errorf("error calling create bucket handler. detail %s", err.Error())
 	}
 
 	log.Println(fmt.Sprintf("result: %v", result))
@@ -99,9 +116,24 @@ func callPutBucketHandler(userID string, bucket string, hash string) error {
 
 	// If the status code is NOT 200, the call failed
 	if resp.StatusCode != 200 {
-		fmt.Println("Error calling create bucket handler, StatusCode: " + strconv.Itoa(resp.StatusCode))
+		log.Println("Error calling create bucket handler, StatusCode: " + strconv.Itoa(resp.StatusCode))
 		return fmt.Errorf("Error calling create bucket handler, StatusCode: " + strconv.Itoa(resp.StatusCode))
 	}
 
 	return nil
+}
+
+func extractAuthHeader(ctx context.Context) (string, error) {
+	var auth string
+	var ok bool
+	headerErrMsg := "error extracting auth header from context"
+	if auth, ok = ctx.Value(authHeader).(string); !ok {
+		log.Println(headerErrMsg)
+		return "", fmt.Errorf(headerErrMsg)
+	}
+	if auth == "" {
+		log.Println(headerErrMsg)
+		return "", fmt.Errorf(headerErrMsg)
+	}
+	return auth, nil
 }

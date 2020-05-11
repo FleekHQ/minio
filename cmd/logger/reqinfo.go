@@ -44,6 +44,7 @@ type ReqInfo struct {
 	BucketName   string   // Bucket name
 	ObjectName   string   // Object name
 	tags         []KeyVal // Any additional info not accommodated by above fields
+	Authorization string  // Authorization Header
 	sync.RWMutex
 }
 

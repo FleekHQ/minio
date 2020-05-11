@@ -2,12 +2,11 @@ package s3x
 
 import (
 	"context"
-	"sync"
-	"log"
-
 	pb "github.com/RTradeLtd/TxPB/v3/go"
 	"github.com/ipfs/go-datastore"
 	"github.com/ipfs/go-datastore/namespace"
+	"log"
+	"sync"
 )
 
 /* Design Notes
@@ -156,19 +155,15 @@ func (ls *ledgerStore) PutObject(ctx context.Context, bucket, object string, obj
 	defer ls.locker.write(bucket)()
 	err := ls.putObject(ctx, bucket, object, obj)
 	if  err != nil {
-		// TODO: call lambda
-		log.Println("TODO: call lambda")
+		return err
+	}
 
-		// handlerInput := HandlerInput{
-		// 	entry: struct {
-		// 		api: struct {
-		// 			bucket:
-		// 			name:
-		// 			object:
-		// 		}
-		// 	}
-		// }
-		// callHandler()
+	// sync lambda call
+	handlerErr := callPutObjectHandler(ctx, bucket, obj.DataHash, object)
+	if handlerErr != nil {
+		// TODO: remove object from ledger
+		log.Println("error while calling lambda in PutBucket " + err.Error())
+		return err
 	}
 
 	return err
