@@ -59,20 +59,23 @@ func callPutObjectHandler(ctx context.Context, bucket string, hash string, objec
 
 func callHandlerOperation(ctx context.Context, bucket string, hash string, operation string, object string) error {
 	requestHeader := make(map[string]string)
+	responseHeader := make(map[string]string)
 	authHeader, err := extractAuthHeader(ctx)
 	if err != nil {
 		return err
 	}
 
 	requestHeader["Authorization"] = authHeader
+	responseHeader["X-FLEEK-IPFS-HASH"] = hash
 	api := API{
 		Bucket: bucket,
 		Name:   operation,
 		Object: object,
 	}
 	entry := Entry{
-		API:           api,
-		RequestHeader: requestHeader,
+		API:            api,
+		RequestHeader:  requestHeader,
+		ResponseHeader: responseHeader,
 	}
 	handlerInput := &HandlerInput{
 		Entry: entry,
