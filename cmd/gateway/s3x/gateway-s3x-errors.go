@@ -2,7 +2,6 @@ package s3x
 
 import (
 	"errors"
-
 	minio "github.com/minio/minio/cmd"
 )
 
@@ -29,6 +28,8 @@ var (
 	ErrObjectSizeZero = errors.New("object with size zero not allowed")
 
 	ErrCreatingEmptyFolder = errors.New("error creating empty folder. File keep not found")
+
+	ErrLambdaHandler = errors.New("error when calling the lambda function")
 )
 
 // toMinioErr converts gRPC or ledger errors into compatible minio errors
@@ -50,6 +51,8 @@ func (x *xObjects) toMinioErr(err error, bucket, object, id string) error {
 	case ErrCreatingEmptyFolder:
 		// Note: maybe there is a better error
 		err = minio.ObjectNotFound{Bucket: bucket, Object: object}
+	case ErrLambdaHandler:
+		err = minio.BackendDown{}
 	case nil:
 		return nil
 	}
