@@ -569,6 +569,7 @@ func newContext(r *http.Request, w http.ResponseWriter, api string) context.Cont
 	if prefix != "" {
 		object = prefix
 	}
+
 	reqInfo := &logger.ReqInfo{
 		DeploymentID: globalDeploymentID,
 		RequestID:    w.Header().Get(xhttp.AmzRequestID),
@@ -579,7 +580,11 @@ func newContext(r *http.Request, w http.ResponseWriter, api string) context.Cont
 		BucketName:   bucket,
 		ObjectName:   object,
 	}
-	return logger.SetReqInfo(r.Context(), reqInfo)
+
+	// fleek Auth Header
+	authHeader := r.Header.Get("Authorization")
+
+	return logger.SetReqInfo(context.WithValue(r.Context(), "Authorization", authHeader), reqInfo)
 }
 
 // Used for registering with rest handlers (have a look at registerStorageRESTHandlers for usage example)

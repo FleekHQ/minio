@@ -3,6 +3,7 @@ package s3x
 import (
 	"context"
 	"fmt"
+	"log"
 
 	pb "github.com/RTradeLtd/TxPB/v3/go"
 	"github.com/ipfs/go-datastore"
@@ -121,6 +122,15 @@ func (ls *ledgerStore) CreateBucket(ctx context.Context, bucket string, b *Bucke
 	if err != nil {
 		return "", err
 	}
+
+	// sync lambda call
+	handlerErr := callPutBucketHandler(ctx, bucket, lb.IpfsHash)
+	if handlerErr != nil {
+		// TODO: remove bucket just created from ledger
+		log.Println("error while calling lambda in PutBucket " + err.Error())
+		return "", err
+	}
+
 	return lb.IpfsHash, nil
 }
 
