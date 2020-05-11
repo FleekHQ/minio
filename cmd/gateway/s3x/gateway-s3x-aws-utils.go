@@ -2,7 +2,6 @@ package s3x
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/lambda"
 
@@ -64,35 +63,23 @@ func callPutBucketHandler(userID string, bucket string, hash string) error {
 	if err != nil {
 		fmt.Println("error marshaling json: ", err)
 	}
-	// QUESTION: why is this printing field names in caps?
+
 	log.Println("calling lambda with: ", string(j))
 
 	// Time to call lambda
 	// https://github.com/awsdocs/aws-doc-sdk-examples/blob/master/go/example_code/lambda/aws-go-sdk-lambda-example-run-function.go
 
-	// TODO: check for these on boot
-	log.Println("AWS_ACCESS_KEY_ID: ", os.Getenv("AWS_ACCESS_KEY_ID"))
-	log.Println("AWS_SECRET_ACCESS_KEY: ", os.Getenv("AWS_SECRET_ACCESS_KEY"))
-
-	// Create Lambda service client
-	// sess := session.Must(session.NewSessionWithOptions(session.Options{
-	// 	SharedConfigState: session.SharedConfigEnable,
-	// }))
 	sess := session.Must(session.NewSession())
 
 	client := lambda.New(sess, &aws.Config{
-		Region:      aws.String("us-west-2"),
-		Credentials: credentials.NewStaticCredentials(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), ""),
+		Region: aws.String("us-west-2"),
 	})
 
-	// TODO: env var for stage
-	// TODO: make lambda function come from env var too
-	// NOTE: temp using httpLogger instead of s3x handler for testing
+	handlerFunction := os.Getenv("CRUD_HANDLER_FUNCTION")
+
 	result, err := client.Invoke(&lambda.InvokeInput{
-		FunctionName:   aws.String("httpLogger"),
-		InvocationType: aws.String("RequestResponse"),
-		LogType:        aws.String("Tail"),
-		Payload:        j})
+		FunctionName: aws.String(handlerFunction),
+		Payload:      j})
 	log.Println("returned from invoke")
 	if err != nil {
 		log.Println("got error: ", err)
