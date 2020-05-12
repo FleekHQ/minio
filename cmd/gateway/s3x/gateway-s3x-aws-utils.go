@@ -13,9 +13,24 @@ import (
 	"github.com/aws/aws-sdk-go/service/lambda"
 )
 
+
+
 const (
 	authHeader = "Authorization"
 )
+
+type OperationHelper interface {
+	CallPutBucketHandler(ctx context.Context, bucket string, hash string) error
+	CallPutObjectHandler(ctx context.Context, bucket string, hash string, object string) error
+}
+
+type Invoker interface {
+	Invoke(input *lambda.InvokeInput) (*lambda.InvokeOutput, error)
+}
+
+type lambdaHelper struct {
+	client Invoker
+}
 
 // API is a property on handlerinput.entry
 type API struct {
@@ -48,15 +63,31 @@ type LambdaResponse struct {
 	Headers    LambdaResponseHeaders `json:"headers"`
 }
 
-func callPutBucketHandler(ctx context.Context, bucket string, hash string) error {
-	return callHandlerOperation(ctx, bucket, hash, "PutBucket", "")
+func NewOperationHelper(i Invoker) OperationHelper {
+	client := i
+	if client == nil {
+		sess := session.Must(session.NewSession())
+
+		client = lambda.New(sess, &aws.Config{
+			Region: aws.String("us-west-2"),
+		})
+	}
+	oh := &lambdaHelper{
+		client: client,
+	}
+
+	return oh
 }
 
-func callPutObjectHandler(ctx context.Context, bucket string, hash string, object string) error {
-	return callHandlerOperation(ctx, bucket, hash, "PutObject", object)
+func (lh *lambdaHelper) CallPutBucketHandler(ctx context.Context, bucket string, hash string) error {
+	return lh.callHandlerOperation(ctx, bucket, hash, "PutBucket", "")
 }
 
-func callHandlerOperation(ctx context.Context, bucket string, hash string, operation string, object string) error {
+func (lh *lambdaHelper) CallPutObjectHandler(ctx context.Context, bucket string, hash string, object string) error {
+	return lh.callHandlerOperation(ctx, bucket, hash, "PutObject", object)
+}
+
+func (lh *lambdaHelper) callHandlerOperation(ctx context.Context, bucket string, hash string, operation string, object string) error {
 	requestHeader := make(map[string]string)
 	responseHeader := make(map[string]string)
 	authHeader, err := extractAuthHeader(ctx)
@@ -91,15 +122,18 @@ func callHandlerOperation(ctx context.Context, bucket string, hash string, opera
 	// Time to call lambda
 	// https://github.com/awsdocs/aws-doc-sdk-examples/blob/master/go/example_code/lambda/aws-go-sdk-lambda-example-run-function.go
 
-	sess := session.Must(session.NewSession())
+	if lh.client == nil {
+		sess := session.Must(session.NewSession())
 
-	client := lambda.New(sess, &aws.Config{
-		Region: aws.String("us-west-2"),
-	})
+		lh.client = lambda.New(sess, &aws.Config{
+			Region: aws.String("us-west-2"),
+		})
+	}
+
 
 	handlerFunction := os.Getenv("CRUD_HANDLER_FUNCTION")
 
-	result, err := client.Invoke(&lambda.InvokeInput{
+	result, err := lh.client.Invoke(&lambda.InvokeInput{
 		FunctionName: aws.String(handlerFunction),
 		Payload:      j})
 	if err != nil {
