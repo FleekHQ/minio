@@ -50,6 +50,7 @@ func (g *testGateway) restart(t *testing.T) {
 		t.Fatal(err)
 	}
 	g.xObjects = gateway.(*xObjects)
+	g.xObjects.ledgerStore.oh = NewOperationMockHelper()
 }
 
 func (g *testGateway) Shutdown(ctx context.Context) error {
