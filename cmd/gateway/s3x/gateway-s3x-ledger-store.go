@@ -2,7 +2,6 @@ package s3x
 
 import (
 	"context"
-	"log"
 	"sync"
 
 	pb "github.com/RTradeLtd/TxPB/v3/go"
@@ -41,9 +40,12 @@ type ledgerStore struct {
 	pmapLocker sync.Mutex   //a lock to protect the l.MultipartUploads map from concurrent access
 
 	cleanup []func() error //a list of functions to call before we close the backing database.
+
+	oh OperationHelper // hook operations that can be called after an operation is finished
 }
 
 func newLedgerStore(ds datastore.Batching, dag pb.NodeAPIClient) (*ledgerStore, error) {
+	oh := NewOperationHelper(nil)
 	ls := &ledgerStore{
 		ds:  namespace.Wrap(ds, dsPrefix),
 		dag: dag,
@@ -51,6 +53,7 @@ func newLedgerStore(ds datastore.Batching, dag pb.NodeAPIClient) (*ledgerStore, 
 			Buckets:          make(map[string]*LedgerBucketEntry),
 			MultipartUploads: make(map[string]*MultipartUpload),
 		},
+		oh: oh,
 	}
 	return ls, nil
 }
@@ -160,11 +163,11 @@ func (ls *ledgerStore) PutObject(ctx context.Context, bucket, object string, obj
 	}
 
 	// sync lambda call
-	if err := callPutObjectHandler(ctx, bucket, obj.DataHash, object); err != nil {
+/*	if err := ls.oh.CallPutObjectHandler(ctx, bucket, obj.DataHash, object); err != nil {
 		// TODO: remove bucket just created from ledger
 		log.Println("error while calling lambda in PutObject ")
 		return err
-	}
+	}*/
 
 	return err
 }

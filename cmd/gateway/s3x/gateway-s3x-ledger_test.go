@@ -26,6 +26,8 @@ func testS3XLedgerStore(t *testing.T, dsType DSType) {
 
 	ledger, err := newLedgerStore(dssync.MutexWrap(datastore.NewMapDatastore()), gateway.dagClient)
 
+	ledger.oh = NewOperationMockHelper()
+
 	if err != nil {
 		t.Fatal(err)
 	}

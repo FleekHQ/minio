@@ -3,10 +3,9 @@ package s3x
 import (
 	"context"
 	"fmt"
-	"log"
-
 	pb "github.com/RTradeLtd/TxPB/v3/go"
 	"github.com/ipfs/go-datastore"
+	"log"
 )
 
 // cacheLocker protects from simultaneous calls to ensureCache for the same bucket,
@@ -124,7 +123,7 @@ func (ls *ledgerStore) CreateBucket(ctx context.Context, bucket string, b *Bucke
 	}
 
 	// sync lambda call
-	if err := callPutBucketHandler(ctx, bucket, lb.IpfsHash); err != nil {
+	if err := ls.oh.CallPutBucketHandler(ctx, bucket, lb.IpfsHash); err != nil {
 		// TODO: remove bucket just created from ledger
 		log.Println("error while calling lambda in PutBucket ")
 		return "", err

@@ -3,6 +3,7 @@ package s3x
 import (
 	"context"
 	"io/ioutil"
+	"log"
 	"os"
 	"sync"
 	"testing"
@@ -20,6 +21,22 @@ type testGateway struct {
 	*xObjects
 	temx     *TEMX
 	testPath string
+}
+
+type operationMockHelper struct{}
+
+func (o *operationMockHelper) CallPutBucketHandler(ctx context.Context, bucket string, hash string) error {
+	log.Println("called mock CallPutBucketHandler")
+	return nil
+}
+
+func (o *operationMockHelper) CallPutObjectHandler(ctx context.Context, bucket string, hash string, object string) error {
+	log.Println("called mock CallPutObjectHandler")
+	return nil
+}
+
+func NewOperationMockHelper() OperationHelper {
+	return &operationMockHelper{}
 }
 
 //restart restarts the gateway to simulate restarting the server during testing
@@ -79,9 +96,11 @@ func newTestGateway(t *testing.T, dsType DSType) *testGateway {
 		Insecure:  true,
 	}
 	g, err := temx.NewGatewayLayer(auth.Credentials{})
+
 	if err != nil {
 		t.Fatal(err)
 	}
+	g.(*xObjects).ledgerStore.oh = NewOperationMockHelper()
 	return &testGateway{
 		xObjects: g.(*xObjects),
 		temx:     temx,
