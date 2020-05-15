@@ -1,10 +1,7 @@
 package s3x
 
 import (
-	"fmt"
 	minio "github.com/minio/minio/cmd"
-	"log"
-	"net/http"
 )
 
 /* Design Notes
@@ -27,25 +24,5 @@ func getMinioObjectInfo(o *ObjectInfo) minio.ObjectInfo {
 		ModTime:     o.ModTime,
 		ContentType: o.ContentType,
 		UserDefined: o.UserDefined,
-	}
-}
-
-// ******  FLEEK UTILS *************
-
-func pingHash(hash string) {
-	// PING hashes on IPFS gateways
-	urls := []string{
-		"https://gateway.temporal.cloud/ipfs/" + hash,
-		"https://ipfs.fleek.co/ipfs/" + hash,
-		"https://ipfs.io/ipfs/" + hash,
-	}
-	for _, url := range urls {
-		go func (url string) {
-			_, err := http.Get(url)
-			if err != nil {
-				log.Println(fmt.Printf("error when pinging url %s on hash %s. Err: %s", url, hash, err.Error()))
-			}
-			log.Println(fmt.Sprintf("pinged to url gateway %s with hash %s", url, hash))
-		} (url)
 	}
 }

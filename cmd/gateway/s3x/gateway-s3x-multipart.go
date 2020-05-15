@@ -196,6 +196,7 @@ func (x *xObjects) CompleteMultipartUpload(
 	// Add Fleek content hash header
 	loi.UserDefined = map[string]string{
 		fleekIpfsContentHash: dataHash,
+		fleekIpfsContentHashV0: convertToHashV0(dataHash),
 	}
 	// ping gateways for hashes
 	pingHash(dataHash)

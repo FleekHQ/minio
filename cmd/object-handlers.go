@@ -70,7 +70,8 @@ const (
 	// add an input buffer of this size.
 	encryptBufferSize = 1 << 20
 
-	fleekIpfsContentHash = "X-FLEEK-IPFS-HASH"
+	fleekIpfsContentHash   = "X-FLEEK-IPFS-HASH"
+	fleekIpfsContentHashV0 = "X-FLEEK-IPFS-HASH-V0"
 )
 
 // setHeadGetRespHeaders - set any requested parameters as response headers.
@@ -1447,6 +1448,7 @@ func (api objectAPIHandlers) PutObjectHandler(w http.ResponseWriter, r *http.Req
 	// Add Fleek Content Header
 	if objInfo.UserDefined != nil && objInfo.UserDefined[fleekIpfsContentHash] != "" {
 		w.Header()[fleekIpfsContentHash] = []string{objInfo.UserDefined[fleekIpfsContentHash]}
+		w.Header()[fleekIpfsContentHashV0] = []string{objInfo.UserDefined[fleekIpfsContentHashV0]}
 	}
 
 	etag := objInfo.ETag
@@ -2555,6 +2557,7 @@ func (api objectAPIHandlers) CompleteMultipartUploadHandler(w http.ResponseWrite
 	// Add Fleek Content Header
 	if objInfo.UserDefined != nil && objInfo.UserDefined[fleekIpfsContentHash] != "" {
 		w.Header()[fleekIpfsContentHash] = []string{objInfo.UserDefined[fleekIpfsContentHash]}
+		w.Header()[fleekIpfsContentHashV0] = []string{objInfo.UserDefined[fleekIpfsContentHashV0]}
 	}
 
 	// Write success response.

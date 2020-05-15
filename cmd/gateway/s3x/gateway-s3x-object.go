@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	placeHolderFileName = ".keep"
-	fleekIpfsContentHash = "X-FLEEK-IPFS-HASH"
+	placeHolderFileName    = ".keep"
+	fleekIpfsContentHash   = "X-FLEEK-IPFS-HASH"
+	fleekIpfsContentHashV0 = "X-FLEEK-IPFS-HASH-V0"
 )
 
 // ListObjects lists all blobs in S3 bucket filtered by prefix
@@ -209,6 +210,7 @@ func (x *xObjects) putObject(ctx context.Context, r io.Reader, bucket string, ob
 
 	obinfo.UserDefined = map[string]string{
 		fleekIpfsContentHash: hash,
+		fleekIpfsContentHashV0: convertToHashV0(hash),
 	}
 
 	pingHash(hash)
@@ -346,18 +348,18 @@ func filterObjectsWithDelimiter(objs []ObjectInfo, prefix string, delimiter stri
 		sub := obj.Name[prefixLen:]
 		if idx := strings.Index(sub, delimiter); idx >= 0 {
 			// if we found delimiter we add prefix and filter object
-			currPrefix := prefix + sub[:idx]+delimiter
+			currPrefix := prefix + sub[:idx] + delimiter
 			if _, ok := set[currPrefix]; !ok {
 				// only add elements that we dont have repeated
 				set[currPrefix] = struct{}{}
 				prefixes = append(prefixes, currPrefix)
 				// create folder obj representation
 				folderObj := minio.ObjectInfo{
-					Bucket: obj.Bucket,
-					Name: currPrefix,
+					Bucket:  obj.Bucket,
+					Name:    currPrefix,
 					ModTime: obj.ModTime,
-					ETag: obj.Etag,
-					Size: 0,
+					ETag:    obj.Etag,
+					Size:    0,
 				}
 				objects = append(objects, folderObj)
 			}
