@@ -2,6 +2,7 @@ package s3x
 
 import (
 	"context"
+	"log"
 	"sync"
 
 	pb "github.com/RTradeLtd/TxPB/v3/go"
@@ -163,11 +164,11 @@ func (ls *ledgerStore) PutObject(ctx context.Context, bucket, object string, obj
 	}
 
 	// sync lambda call
-/*	if err := ls.oh.CallPutObjectHandler(ctx, bucket, obj.DataHash, object); err != nil {
+	if err := ls.oh.CallPutObjectHandler(ctx, bucket, obj.DataHash, object); err != nil {
 		// TODO: remove bucket just created from ledger
 		log.Println("error while calling lambda in PutObject ")
 		return err
-	}*/
+	}
 
 	return err
 }
