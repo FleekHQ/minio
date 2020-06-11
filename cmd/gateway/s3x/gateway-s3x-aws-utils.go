@@ -8,6 +8,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/minio/minio/pkg/auth"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/lambda"
@@ -90,13 +92,20 @@ func (lh *lambdaHelper) CallPutObjectHandler(ctx context.Context, bucket string,
 func (lh *lambdaHelper) callHandlerOperation(ctx context.Context, bucket string, hash string, operation string, object string) error {
 	requestHeader := make(map[string]string)
 	responseHeader := make(map[string]string)
-	authHeader, err := extractAuthHeader(ctx)
-	if err != nil {
+	cred, ok := ctx.Value(authHeader).(auth.Credentials)
+
+	if !ok {
 		return ErrLambdaHandler
 	}
 
-	requestHeader["Authorization"] = authHeader
+	parentUser := cred.AccessKey
+	if cred.ParentUser != "" {
+		parentUser = cred.ParentUser
+	}
+
+	requestHeader[authHeader] = parentUser
 	responseHeader["X-FLEEK-IPFS-HASH"] = hash
+
 	api := API{
 		Bucket: bucket,
 		Name:   operation,
@@ -160,19 +169,4 @@ func (lh *lambdaHelper) callHandlerOperation(ctx context.Context, bucket string,
 	}
 
 	return nil
-}
-
-func extractAuthHeader(ctx context.Context) (string, error) {
-	var auth string
-	var ok bool
-	headerErrMsg := "error extracting auth header from context"
-	if auth, ok = ctx.Value(authHeader).(string); !ok {
-		log.Println(headerErrMsg)
-		return "", ErrLambdaHandler
-	}
-	if auth == "" {
-		log.Println(headerErrMsg)
-		return "", ErrLambdaHandler
-	}
-	return auth, nil
 }

@@ -582,9 +582,9 @@ func newContext(r *http.Request, w http.ResponseWriter, api string) context.Cont
 	}
 
 	// fleek Auth Header
-	authHeader := r.Header.Get("Authorization")
+	cred := getReqAccessCred(r, globalServerRegion)
 
-	return logger.SetReqInfo(context.WithValue(r.Context(), "Authorization", authHeader), reqInfo)
+	return logger.SetReqInfo(context.WithValue(r.Context(), "Authorization", cred), reqInfo)
 }
 
 // Used for registering with rest handlers (have a look at registerStorageRESTHandlers for usage example)
