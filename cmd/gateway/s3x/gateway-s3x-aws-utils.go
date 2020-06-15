@@ -23,7 +23,7 @@ const (
 
 type OperationHelper interface {
 	CallPutBucketHandler(ctx context.Context, bucket string, hash string) error
-	CallPutObjectHandler(ctx context.Context, bucket string, hash string, object string) error
+	CallPutObjectHandler(ctx context.Context, bucket string, obj *Object, object string) error
 }
 
 type Invoker interface {
@@ -39,6 +39,7 @@ type API struct {
 	Bucket string `json:"bucket"`           // bucket slug
 	Name   string `json:"name"`             //operation
 	Object string `json:"object",omitempty` // optional object key
+	ObjectSize int64 `json:"objectSize"`
 }
 
 // Entry is a property for handler input
@@ -82,20 +83,26 @@ func NewOperationHelper(i Invoker) OperationHelper {
 }
 
 func (lh *lambdaHelper) CallPutBucketHandler(ctx context.Context, bucket string, hash string) error {
-	return lh.callHandlerOperation(ctx, bucket, hash, "PutBucket", "")
+	return lh.callHandlerOperation(ctx, bucket, hash, "PutBucket", "", nil)
 }
 
-func (lh *lambdaHelper) CallPutObjectHandler(ctx context.Context, bucket string, hash string, object string) error {
-	return lh.callHandlerOperation(ctx, bucket, hash, "PutObject", object)
+func (lh *lambdaHelper) CallPutObjectHandler(ctx context.Context, bucket string, obj *Object, object string) error {
+	return lh.callHandlerOperation(ctx, bucket, obj.DataHash, "PutObject", object, obj)
 }
 
-func (lh *lambdaHelper) callHandlerOperation(ctx context.Context, bucket string, hash string, operation string, object string) error {
+func (lh *lambdaHelper) callHandlerOperation(ctx context.Context, bucket string, hash string, operation string, object string, obj *Object) error {
 	requestHeader := make(map[string]string)
 	responseHeader := make(map[string]string)
 	cred, ok := ctx.Value(authHeader).(auth.Credentials)
 
 	if !ok {
 		return ErrLambdaHandler
+	}
+
+	objSize := int64(0);
+
+	if obj != nil {
+		objSize = obj.ObjectInfo.Size_;
 	}
 
 	parentUser := cred.AccessKey
@@ -110,7 +117,9 @@ func (lh *lambdaHelper) callHandlerOperation(ctx context.Context, bucket string,
 		Bucket: bucket,
 		Name:   operation,
 		Object: object,
+		ObjectSize: objSize,
 	}
+
 	entry := Entry{
 		API:            api,
 		RequestHeader:  requestHeader,
