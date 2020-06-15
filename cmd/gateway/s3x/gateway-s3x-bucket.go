@@ -74,4 +74,3 @@ func (x *xObjects) DeleteBucket(ctx context.Context, name string, forceDelete bo
 	// TODO(bonedaddy): implement removal call from TemporalX
 	return x.toMinioErr(x.ledgerStore.DeleteBucket(name), name, "", "")
 }
-

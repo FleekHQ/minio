@@ -17,17 +17,17 @@ func pingHash(hash string) {
 		"https://ipfs.io/ipfs/" + hash,
 	}
 	for _, url := range urls {
-		go func (url string) {
+		go func(url string) {
 			_, err := http.Get(url)
 			if err != nil {
 				log.Println(fmt.Printf("error when pinging url %s on hash %s. Err: %s", url, hash, err.Error()))
 			}
 			log.Println(fmt.Sprintf("pinged to url gateway %s with hash %s", url, hash))
-		} (url)
+		}(url)
 	}
 }
 
-func convertToHashV0(hash string) (string) {
+func convertToHashV0(hash string) string {
 	c, err := cid.Decode(hash)
 	if err != nil {
 		log.Println("error trying to convert hash to V0", hash)

@@ -209,7 +209,7 @@ func (x *xObjects) putObject(ctx context.Context, r io.Reader, bucket string, ob
 	}
 
 	obinfo.UserDefined = map[string]string{
-		fleekIpfsContentHash: hash,
+		fleekIpfsContentHash:   hash,
 		fleekIpfsContentHashV0: convertToHashV0(hash),
 	}
 
