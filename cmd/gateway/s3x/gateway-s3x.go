@@ -71,7 +71,6 @@ type xObjects struct {
 	listener net.Listener
 }
 
-
 func init() {
 	if err := minio.RegisterGatewayCommand(cli.Command{
 		Name:        temxBackend,

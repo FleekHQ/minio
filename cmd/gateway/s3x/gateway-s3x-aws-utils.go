@@ -15,15 +15,14 @@ import (
 	"github.com/aws/aws-sdk-go/service/lambda"
 )
 
-
-
 const (
 	authHeader = "Authorization"
 )
 
 type OperationHelper interface {
 	CallPutBucketHandler(ctx context.Context, bucket string, hash string) error
-	CallPutObjectHandler(ctx context.Context, bucket string, hash string, object string) error
+	CallPutObjectHandler(ctx context.Context, bucket string, obj *Object, object string) error
+	CallRemoveObjectHandler(ctx context.Context, bucket string, obj *Object, object string) error
 }
 
 type Invoker interface {
@@ -36,9 +35,10 @@ type lambdaHelper struct {
 
 // API is a property on handlerinput.entry
 type API struct {
-	Bucket string `json:"bucket"`           // bucket slug
-	Name   string `json:"name"`             //operation
-	Object string `json:"object",omitempty` // optional object key
+	Bucket     string `json:"bucket"`           // bucket slug
+	Name       string `json:"name"`             //operation
+	Object     string `json:"object",omitempty` // optional object key
+	ObjectSize int64  `json:"objectSize"`
 }
 
 // Entry is a property for handler input
@@ -82,20 +82,30 @@ func NewOperationHelper(i Invoker) OperationHelper {
 }
 
 func (lh *lambdaHelper) CallPutBucketHandler(ctx context.Context, bucket string, hash string) error {
-	return lh.callHandlerOperation(ctx, bucket, hash, "PutBucket", "")
+	return lh.callHandlerOperation(ctx, bucket, hash, "PutBucket", "", nil)
 }
 
-func (lh *lambdaHelper) CallPutObjectHandler(ctx context.Context, bucket string, hash string, object string) error {
-	return lh.callHandlerOperation(ctx, bucket, hash, "PutObject", object)
+func (lh *lambdaHelper) CallPutObjectHandler(ctx context.Context, bucket string, obj *Object, object string) error {
+	return lh.callHandlerOperation(ctx, bucket, obj.DataHash, "PutObject", object, obj)
 }
 
-func (lh *lambdaHelper) callHandlerOperation(ctx context.Context, bucket string, hash string, operation string, object string) error {
+func (lh *lambdaHelper) CallRemoveObjectHandler(ctx context.Context, bucket string, obj *Object, object string) error {
+	return lh.callHandlerOperation(ctx, bucket, obj.DataHash, "RemoveObject", object, obj)
+}
+
+func (lh *lambdaHelper) callHandlerOperation(ctx context.Context, bucket string, hash string, operation string, object string, obj *Object) error {
 	requestHeader := make(map[string]string)
 	responseHeader := make(map[string]string)
 	cred, ok := ctx.Value(authHeader).(auth.Credentials)
 
 	if !ok {
 		return ErrLambdaHandler
+	}
+
+	objSize := int64(0)
+
+	if obj != nil {
+		objSize = obj.ObjectInfo.Size_
 	}
 
 	parentUser := cred.AccessKey
@@ -107,10 +117,12 @@ func (lh *lambdaHelper) callHandlerOperation(ctx context.Context, bucket string,
 	responseHeader["X-FLEEK-IPFS-HASH"] = hash
 
 	api := API{
-		Bucket: bucket,
-		Name:   operation,
-		Object: object,
+		Bucket:     bucket,
+		Name:       operation,
+		Object:     object,
+		ObjectSize: objSize,
 	}
+
 	entry := Entry{
 		API:            api,
 		RequestHeader:  requestHeader,
@@ -139,7 +151,6 @@ func (lh *lambdaHelper) callHandlerOperation(ctx context.Context, bucket string,
 		})
 	}
 
-
 	handlerFunction := os.Getenv("CRUD_HANDLER_FUNCTION")
 
 	result, err := lh.client.Invoke(&lambda.InvokeInput{
@@ -156,12 +167,12 @@ func (lh *lambdaHelper) callHandlerOperation(ctx context.Context, bucket string,
 	var resp LambdaResponse
 
 	// TODO: add statusCode to lambda response
-/*	err = json.Unmarshal(result.Payload, &resp)
-	if err != nil {
-		log.Println("Error unmarshalling create bucket handler response")
-		return ErrLambdaHandler
-	}
-*/
+	/*	err = json.Unmarshal(result.Payload, &resp)
+		if err != nil {
+			log.Println("Error unmarshalling create bucket handler response")
+			return ErrLambdaHandler
+		}
+	*/
 	// If the status code is NOT 200, the call failed
 	if *result.StatusCode != 200 {
 		log.Println("Error calling create bucket handler, StatusCode: " + strconv.Itoa(resp.StatusCode))

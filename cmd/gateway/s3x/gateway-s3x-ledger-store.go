@@ -148,6 +148,19 @@ func (ls *ledgerStore) removeObjects(ctx context.Context, bucket string, objects
 			missing = append(missing, o)
 			continue
 		}
+
+		obj, err := ls.object(ctx, bucket, o)
+
+		if err != nil {
+			return nil, err
+		}
+
+		if err := ls.oh.CallRemoveObjectHandler(ctx, bucket, obj, o); err != nil {
+			// TODO: remove bucket just created from ledger
+			log.Println("error while calling lambda in RemoveObject ")
+			return nil, err
+		}
+
 		delete(b.Bucket.Objects, o)
 	}
 	_, err = ls.saveBucket(ctx, bucket, b.Bucket)
@@ -164,7 +177,7 @@ func (ls *ledgerStore) PutObject(ctx context.Context, bucket, object string, obj
 	}
 
 	// sync lambda call
-	if err := ls.oh.CallPutObjectHandler(ctx, bucket, obj.DataHash, object); err != nil {
+	if err := ls.oh.CallPutObjectHandler(ctx, bucket, obj, object); err != nil {
 		// TODO: remove bucket just created from ledger
 		log.Println("error while calling lambda in PutObject ")
 		return err
