@@ -33,6 +33,7 @@ require (
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/vault/api v1.0.4
+	github.com/ipfs/go-cid v0.0.7 // indirect
 	github.com/json-iterator/go v1.1.10
 	github.com/klauspost/compress v1.11.3
 	github.com/klauspost/cpuid v1.3.1
