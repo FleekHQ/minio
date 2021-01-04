@@ -20,11 +20,13 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"regexp"
 	"strconv"
 	"time"
 
+	"github.com/ipfs/go-cid"
 	"github.com/minio/minio/internal/bucket/lifecycle"
 	xhttp "github.com/minio/minio/internal/http"
 )
@@ -32,6 +34,27 @@ import (
 var (
 	etagRegex = regexp.MustCompile("\"*?([^\"]*?)\"*?$")
 )
+
+const (
+	fleekIpfsContentHash   = "X-FLEEK-IPFS-HASH"
+	fleekIpfsContentHashV0 = "X-FLEEK-IPFS-HASH-V0"
+)
+
+func convertToHashV0(hash string) (string) {
+	c, err := cid.Decode(hash)
+	if err != nil {
+		log.Println("error trying to convert hash to V0", hash)
+		return ""
+	}
+
+	if c.Version() != 0 {
+		// cid if not V0
+		return c.Hash().B58String()
+	}
+
+	return hash
+}
+
 
 // Validates the preconditions for CopyObjectPart, returns true if CopyObjectPart
 // operation should not proceed. Preconditions supported are:
@@ -249,6 +272,8 @@ func setPutObjHeaders(w http.ResponseWriter, objInfo ObjectInfo, delete bool) {
 	// Therefore, we have to set the ETag directly as map entry.
 	if objInfo.ETag != "" && !delete {
 		w.Header()[xhttp.ETag] = []string{`"` + objInfo.ETag + `"`}
+		w.Header()[fleekIpfsContentHashV0] = []string{`"` + convertToHashV0(objInfo.ETag) + `"`}
+		w.Header()[fleekIpfsContentHash] = []string{`"` + objInfo.ETag + `"`}
 	}
 
 	// Set the relevant version ID as part of the response header.
