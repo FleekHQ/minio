@@ -43,7 +43,6 @@ const (
 func convertToHashV0(hash string) (string) {
 	c, err := cid.Decode(hash)
 	if err != nil {
-		log.Println("error trying to convert hash to V0", hash)
 		return ""
 	}
 
