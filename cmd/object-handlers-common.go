@@ -40,7 +40,7 @@ const (
 	fleekIpfsContentHashV0 = "X-FLEEK-IPFS-HASH-V0"
 )
 
-func convertToHashV0(hash string) (string) {
+func convertToHashV0(hash string) string {
 	c, err := cid.Decode(hash)
 	if err != nil {
 		return ""
@@ -53,7 +53,6 @@ func convertToHashV0(hash string) (string) {
 
 	return hash
 }
-
 
 // Validates the preconditions for CopyObjectPart, returns true if CopyObjectPart
 // operation should not proceed. Preconditions supported are:
