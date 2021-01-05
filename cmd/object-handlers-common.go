@@ -24,11 +24,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/ipfs/go-cid"
 	xhttp "github.com/minio/minio/cmd/http"
 	"github.com/minio/minio/pkg/bucket/lifecycle"
 	"github.com/minio/minio/pkg/event"
 	"github.com/minio/minio/pkg/handlers"
-	"github.com/ipfs/go-cid"
 )
 
 var (
@@ -40,7 +40,7 @@ const (
 	fleekIpfsContentHashV0 = "X-FLEEK-IPFS-HASH-V0"
 )
 
-func convertToHashV0(hash string) (string) {
+func convertToHashV0(hash string) string {
 	c, err := cid.Decode(hash)
 	if err != nil {
 		return ""
@@ -53,7 +53,6 @@ func convertToHashV0(hash string) (string) {
 
 	return hash
 }
-
 
 // Validates the preconditions for CopyObjectPart, returns true if CopyObjectPart
 // operation should not proceed. Preconditions supported are:
