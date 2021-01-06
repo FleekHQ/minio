@@ -224,6 +224,9 @@ type IAMSys struct {
 
 	// configLoaded will be closed and remain so after first load.
 	configLoaded chan struct{}
+
+	// is iam ready
+	iamReady      bool
 }
 
 // IAMUserType represents a user type inside MinIO server
@@ -597,6 +600,7 @@ func (sys *IAMSys) Init(ctx context.Context, objAPI ObjectLayer) {
 	// Initialize IAM store
 	sys.InitStore(objAPI)
 
+	sys.iamReady = false
 	const layout = "Jan 2, 2006 at 3:04pm (MST)"
 	fmt.Println("Started IAM.Init() at " + time.Now().UTC().Format(layout))
 	retryCtx, cancel := context.WithCancel(ctx)
@@ -671,6 +675,9 @@ func (sys *IAMSys) Init(ctx context.Context, objAPI ObjectLayer) {
 	}
 
 	fmt.Println("Finished IAM.Init() at " + time.Now().UTC().Format(layout))
+
+	// Invalidate the old cred always, even upon error to avoid any leakage.
+	sys.iamReady = true
 	go sys.store.watch(ctx, sys)
 }
 
