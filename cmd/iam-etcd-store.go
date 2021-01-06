@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"path"
 	"strings"
 	"sync"
@@ -460,6 +461,7 @@ func (ies *IAMEtcdStore) loadAll(ctx context.Context, sys *IAMSys) error {
 
 	ies.lock()
 	if err := ies.loadPolicyDocs(ctx, sys.iamPolicyDocsMap); err != nil {
+		fmt.Println("Error ies.loadPolicyDocs")
 		ies.unlock()
 		return err
 	}
@@ -470,34 +472,41 @@ func (ies *IAMEtcdStore) loadAll(ctx context.Context, sys *IAMSys) error {
 
 	if isMinIOUsersSys {
 		if err := ies.loadUsers(ctx, regularUser, iamUsersMap); err != nil {
+			fmt.Println("Error ies.loadUsers")
 			return err
 		}
 		if err := ies.loadGroups(ctx, iamGroupsMap); err != nil {
+			fmt.Println("Error ies.loadGroups")
 			return err
 		}
 	}
 
 	// load polices mapped to users
 	if err := ies.loadMappedPolicies(ctx, regularUser, false, iamUserPolicyMap); err != nil {
+		fmt.Println("Error ies.loadMappedPolicies users")
 		return err
 	}
 
 	// load policies mapped to groups
 	if err := ies.loadMappedPolicies(ctx, regularUser, true, iamGroupPolicyMap); err != nil {
+		fmt.Println("Error ies.loadMappedPolicies groups")
 		return err
 	}
 
 	if err := ies.loadUsers(ctx, srvAccUser, iamUsersMap); err != nil {
+		fmt.Println("Error ies.loadUsers srvAccUser")
 		return err
 	}
 
 	// load STS temp users
 	if err := ies.loadUsers(ctx, stsUser, iamUsersMap); err != nil {
+		fmt.Println("Error ies.loadUsers stsUser")
 		return err
 	}
 
 	// load STS policy mappings
 	if err := ies.loadMappedPolicies(ctx, stsUser, false, iamUserPolicyMap); err != nil {
+		fmt.Println("Error ies.loadMappedPolicies stsUser")
 		return err
 	}
 
