@@ -117,6 +117,7 @@ func (ies *IAMEtcdStore) saveIAMConfig(ctx context.Context, item interface{}, pa
 func (ies *IAMEtcdStore) loadIAMConfig(ctx context.Context, item interface{}, path string) error {
 	pdata, err := readKeyEtcd(ctx, ies.client, path)
 	if err != nil {
+		fmt.Println("Error readKeyEtcd: " + path)
 		return err
 	}
 
@@ -275,7 +276,9 @@ func (ies *IAMEtcdStore) loadPolicyDocs(ctx context.Context, m map[string]iampol
 	ctx, cancel := context.WithTimeout(ctx, defaultContextTimeout)
 	defer cancel()
 	r, err := ies.client.Get(ctx, iamConfigPoliciesPrefix, etcd.WithPrefix(), etcd.WithKeysOnly())
+
 	if err != nil {
+		fmt.Println("Error when fetching all policies")
 		return err
 	}
 
@@ -285,6 +288,7 @@ func (ies *IAMEtcdStore) loadPolicyDocs(ctx context.Context, m map[string]iampol
 	for _, policyName := range policies.ToSlice() {
 		err = ies.loadPolicyDoc(ctx, policyName, m)
 		if err != nil {
+			fmt.Println("Error on loading policy doc")
 			return err
 		}
 	}
