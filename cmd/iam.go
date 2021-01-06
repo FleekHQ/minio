@@ -222,7 +222,7 @@ type IAMSys struct {
 	// Persistence layer for IAM subsystem
 	store         IAMStorageAPI
 	storeFallback bool
-	iamReady   bool
+	iamReady      bool
 }
 
 // IAMUserType represents a user type inside MinIO server

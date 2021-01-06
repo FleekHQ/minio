@@ -167,7 +167,7 @@ func shouldProxy() bool {
 	if newObjectLayerFn() == nil {
 		return true
 	}
-	return !globalIAMSys.Initialized() || !globalIAMSys.iamReady
+	return !globalIAMSys.Initialized()
 }
 
 // Fetch redirect location if urlPath satisfies certain
