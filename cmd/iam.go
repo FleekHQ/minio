@@ -444,6 +444,8 @@ func (sys *IAMSys) Initialized() bool {
 
 // Init - initializes config system by reading entries from config/iam
 func (sys *IAMSys) Init(ctx context.Context, objAPI ObjectLayer) {
+	const layout = "Jan 2, 2006 at 3:04pm (MST)"
+	fmt.Println("Started IAM.Init() at " + time.Now().UTC().Format(layout))
 	retryCtx, cancel := context.WithCancel(ctx)
 
 	// Indicate to our routine to exit cleanly upon return.
@@ -532,6 +534,8 @@ func (sys *IAMSys) Init(ctx context.Context, objAPI ObjectLayer) {
 		}
 		break
 	}
+
+	fmt.Println("Finished IAM.Init() at " + time.Now().UTC().Format(layout))
 
 	// Invalidate the old cred always, even upon error to avoid any leakage.
 	globalOldCred = auth.Credentials{}
