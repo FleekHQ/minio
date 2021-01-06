@@ -37,7 +37,7 @@ import (
 	etcd "go.etcd.io/etcd/client/v3"
 )
 
-var defaultContextTimeout = 30 * time.Second
+var defaultContextTimeout = 300 * time.Second
 
 func etcdKvsToSet(prefix string, kvs []*mvccpb.KeyValue) set.StringSet {
 	users := set.NewStringSet()

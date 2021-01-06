@@ -597,6 +597,8 @@ func (sys *IAMSys) Init(ctx context.Context, objAPI ObjectLayer) {
 	// Initialize IAM store
 	sys.InitStore(objAPI)
 
+	const layout = "Jan 2, 2006 at 3:04pm (MST)"
+	fmt.Println("Started IAM.Init() at " + time.Now().UTC().Format(layout))
 	retryCtx, cancel := context.WithCancel(ctx)
 
 	// Indicate to our routine to exit cleanly upon return.
@@ -668,6 +670,7 @@ func (sys *IAMSys) Init(ctx context.Context, objAPI ObjectLayer) {
 		break
 	}
 
+	fmt.Println("Finished IAM.Init() at " + time.Now().UTC().Format(layout))
 	go sys.store.watch(ctx, sys)
 }
 
