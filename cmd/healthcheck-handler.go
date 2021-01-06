@@ -95,6 +95,11 @@ func ReadinessCheckHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set(xhttp.MinIOServerStatus, unavailable)
 	}
 
+	if globalIAMSys.iamReady != true {
+		writeResponse(w, http.StatusServiceUnavailable, nil, mimeNone)
+		return
+	}
+
 	writeResponse(w, http.StatusOK, nil, mimeNone)
 }
 
