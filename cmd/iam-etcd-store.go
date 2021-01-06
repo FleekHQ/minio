@@ -121,6 +121,8 @@ func (ies *IAMEtcdStore) loadIAMConfig(ctx context.Context, item interface{}, pa
 		return err
 	}
 
+	fmt.Println("Success readKeyEtcd: " + path)
+
 	if globalConfigEncrypted && !utf8.Valid(pdata) {
 		pdata, err = madmin.DecryptData(globalActiveCred.String(), bytes.NewReader(pdata))
 		if err != nil {
