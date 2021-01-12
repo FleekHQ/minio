@@ -270,8 +270,8 @@ func setPutObjHeaders(w http.ResponseWriter, objInfo ObjectInfo, delete bool) {
 	// Therefore, we have to set the ETag directly as map entry.
 	if objInfo.ETag != "" && !delete {
 		w.Header()[xhttp.ETag] = []string{`"` + objInfo.ETag + `"`}
-		w.Header()[fleekIpfsContentHashV0] = []string{`"` + convertToHashV0(objInfo.ETag) + `"`}
-		w.Header()[fleekIpfsContentHash] = []string{`"` + objInfo.ETag + `"`}
+		w.Header()[fleekIpfsContentHashV0] = []string{convertToHashV0(objInfo.ETag)}
+		w.Header()[fleekIpfsContentHash] = []string{objInfo.ETag}
 	}
 
 	// Set the relevant version ID as part of the response header.
