@@ -20,7 +20,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"regexp"
 	"strconv"
